@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma } from '@prisma/client';
 
@@ -8,18 +8,30 @@ export class TimeService {
     constructor(private readonly prismaService: PrismaService) {}
 
     async getTimes() {
-        const times = await this.prismaService.timeClock.findMany({
-            include: {
-                User: true,
-                Organization: true
-            }
-        })
-        return times
+        try {
+            const times = await this.prismaService.timeClock.findMany({
+                include: {
+                    User: true,
+                    Organization: true
+                }
+            })
+    
+            if (!times) {
+                throw new NotFoundException("Nenhum horário foi encontrado!")
+             }
+            return times
+        } catch (error) {
+            throw error
+        }
     }
 
     async createTime(data: Prisma.TimeClockCreateInput) {
-        const createdTime = await this.prismaService.timeClock.create({ data })
-        return createdTime   
+        try {
+            const createdTime = await this.prismaService.timeClock.create({ data })
+            return createdTime   
+        } catch (error) {
+            throw error
+        }
     }
 
     async updateTime(params: { where: Prisma.TimeClockWhereUniqueInput, data: Prisma.TimeClockUpdateInput }) {

@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { Prisma, User } from '@prisma/client';
 import { BcryptService } from '../bcrypt/bcrypt.service';
@@ -11,27 +11,36 @@ export class UserService {
     ) {}
 
     async getUser(email: string) {
-        const user = await this.prisma.user.findUnique({
-            where: { email }
-        })
-
-        if (!user) {
-            throw new Error(`Nenhum usuário foi encontrado!`)
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { email }
+            })
+    
+            if (!user) {
+                throw new NotFoundException(`Nenhum usuário foi encontrado!`)
+            }
+    
+            return user
         }
-
-        return user
+        catch (error) {
+            throw error;
+        }
     }
 
     async getUserById(id: number) {
-        const user = await this.prisma.user.findUnique({
-            where: { id }
-        })
-
-        if (!user) {
-            throw new Error(`Nenhum usuário foi encontrado!`)
+        try {
+            const user = await this.prisma.user.findUnique({
+                where: { id }
+            })
+    
+            if (!user) {
+                throw new NotFoundException(`Nenhum usuário foi encontrado!`)
+            }
+    
+            return user
+        }  catch (error) {
+            throw error   
         }
-
-        return user
     }
 
     async getUsers(params: {
@@ -46,6 +55,10 @@ export class UserService {
             const users = await this.prisma.user.findMany({
                 skip, take, cursor, where, orderBy, include: { organizations: true }
             });
+
+            if (!users) {
+                throw new NotFoundException("Nenhum usuário foi encontrado!")
+            }
             return users
         } catch (error) {
           throw new Error(`Não foi possível buscar os usuários: ${error}`)  
@@ -71,6 +84,7 @@ export class UserService {
                     include: { organizationLinks: true }
                 },
             )
+            
             return userCreated
         } catch (error) {
 
@@ -88,6 +102,15 @@ export class UserService {
     }): Promise<User> {
         try {
             const  { where, data } = params
+
+            const userFound = this.prisma.user.findUnique({
+                where
+            }) 
+
+            if (!userFound) {
+                throw new NotFoundException("Nenhum usuário foi encontrado!")
+            }
+
             const userUpdated = this.prisma.user.update({
                 data,
                 where
